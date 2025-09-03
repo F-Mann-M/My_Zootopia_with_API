@@ -8,14 +8,21 @@ API_URL = "https://api.api-ninjas.com/v1/animals?"
 
 
 def load_data_from_api():
-  """
-  prompt user to enter a name of an animal
-  sends a query to animal api get json
-  returns list of dicts from api
-  """
-  animal = input("Enter a name of an animal: ")
-  response = requests.get(API_URL, params={"name": animal}, headers={"X-Api-Key": api_key})
-  return response.json()
+    """
+    prompt user to enter a name of an animal
+    sends a query to animal api get json
+    returns list of dicts from api
+    """
+    animal = input("Enter a name of an animal: ")
+    response = requests.get(API_URL, params={"name": animal}, headers={"X-Api-Key": api_key})
+    response = response.json()
+
+    if not response:
+        return (f"\t<li class=\"cards__item\">\n"
+                f"\t\t<p class=\"card__text\"><h2>The animal {animal} doesn't exist.</h2>\n</p>\n"
+                f"\t</li>")
+    else:
+        return response
 
 
 def load_html(file_path):
@@ -31,13 +38,16 @@ def get_data():
     animals_data_dict = {}
     animals_data = load_data_from_api()
 
+    if isinstance(animals_data, str):
+        return animals_data
+
     for animal in animals_data:
         # get data from dictionary
         name = animal.get("name")
         sci_name = animal.get("taxonomy", {}).get("scientific_name") # Bonus Task 1
         diet = animal.get("characteristics", {}).get("diet")
         animal_type = animal.get("characteristics", {}).get("type")
-        location = ", ".join(animal.get("locations")) #join location list to a string
+        location = animal.get("locations")[0] #join location list to a string
 
         animals_data_dict.setdefault(name, {})
         animals_data_dict[name].setdefault("Scientific Name", sci_name) # Bonus Task 1
@@ -49,6 +59,10 @@ def get_data():
 
 def serialize_animal(animal_dict):
     """Gets an dictionaries in a dictionary and returns it as html list"""
+
+    if isinstance(animal_dict, str):
+        return animal_dict
+
     output = ""
     for animal, data in animal_dict.items():
         output += "<li class=\"cards__item\">\n"
