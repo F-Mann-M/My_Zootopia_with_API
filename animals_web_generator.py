@@ -7,8 +7,13 @@ api_key = os.getenv("API_KEY")
 API_URL = "https://api.api-ninjas.com/v1/animals?"
 
 
-def load_data_from_api(animal):
-  """ Loads a JSON file """
+def load_data_from_api():
+  """
+  prompt user to enter a name of an animal
+  sends a query to animal api get json
+  returns list of dicts from api
+  """
+  animal = input("Enter a name of an animal: ")
   response = requests.get(API_URL, params={"name": animal}, headers={"X-Api-Key": api_key})
   return response.json()
 
@@ -21,10 +26,10 @@ def load_html(file_path):
 
 def get_data():
     """
-    loads a jason and returns a string with name, diet, type and location of an Animal
+    loads a list of dicts from api and returns a string with name, diet, type and location of an Animal
     """
     animals_data_dict = {}
-    animals_data = load_data_from_api("fox")
+    animals_data = load_data_from_api()
 
     for animal in animals_data:
         # get data from dictionary
@@ -81,6 +86,7 @@ def write_html(old_string):
     new_html = replace_string(old_string)
     with open("animals.html", "w") as file:
         file.write(new_html)
+    print("Website was successfully generated to the file animals.html.")
 
 # call function an (over)write html
 write_html("__REPLACE_ANIMALS_INFO__")
