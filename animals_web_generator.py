@@ -1,28 +1,10 @@
-import requests
-from dotenv import load_dotenv
-import os
-
-load_dotenv()
-api_key = os.getenv("API_KEY")
-API_URL = "https://api.api-ninjas.com/v1/animals?"
+from fetch_data import fetch_data_from_api
 
 
-def load_data_from_api():
-    """
-    prompt user to enter a name of an animal
-    sends a query to animal api get json
-    returns list of dicts from api
-    """
-    animal = input("Enter a name of an animal: ")
-    response = requests.get(API_URL, params={"name": animal}, headers={"X-Api-Key": api_key})
-    response = response.json()
-
-    if not response:
-        return (f"\t<li class=\"cards__item\">\n"
-                f"\t\t<p class=\"card__text\"><h2>The animal {animal} doesn't exist.</h2>\n</p>\n"
-                f"\t</li>")
-    else:
-        return response
+def get_animal_name():
+    """prompts user to enter a animal name"""
+    animal_name = input("Enter a name of an animal: ")
+    return animal_name
 
 
 def load_html(file_path):
@@ -31,15 +13,19 @@ def load_html(file_path):
         return file.read()
 
 
-def get_data():
+def create_error_message(animal_name):
+    """takes in an animal name and creates an error message"""
+    error_message = (f"\t<li class=\"cards__item\">\n"
+                     f"\t\t<p class=\"card__text\"><h3>The animal {animal_name} doesn't exist.</h3>\n</p>\n"
+                     f"\t</li>")
+    return error_message
+
+
+def extract_animal_data(animals_data):
     """
     loads a list of dicts from api and returns a string with name, diet, type and location of an Animal
     """
     animals_data_dict = {}
-    animals_data = load_data_from_api()
-
-    if isinstance(animals_data, str):
-        return animals_data
 
     for animal in animals_data:
         # get data from dictionary
@@ -54,14 +40,12 @@ def get_data():
         animals_data_dict[name].setdefault("Diet", diet)
         animals_data_dict[name].setdefault("Location", location)
         animals_data_dict[name].setdefault("Type", animal_type)
+
     return animals_data_dict
 
 
 def serialize_animal(animal_dict):
-    """Gets an dictionaries in a dictionary and returns it as html list"""
-
-    if isinstance(animal_dict, str):
-        return animal_dict
+    """Gets dictionaries in a dictionary and returns it as html list (str)"""
 
     output = ""
     for animal, data in animal_dict.items():
@@ -79,28 +63,45 @@ def serialize_animal(animal_dict):
     return output
 
 
-def replace_string(old_string):
+def replace_string(old_string, new_string):
     """
-    Loads an HTML page, gets data from json, replaces a specific string (old_string)
-    with the data from json (new_string) and returns a new HTML.
-    :param old_string:
-    :return new_html:
+    Loads an HTML page, replaces a specific string (old_string)
+    with new_string and returns a new HTML.
     """
-    new_string = serialize_animal(get_data())
     html_temp = load_html("animals_template.html")
     new_html = html_temp.replace(old_string, new_string)
     return new_html
 
 
-def write_html(old_string):
+def write_html(old_string, new_string):
     """
     Gets HTML code and writes it to a html file
-    :param old_string:
     """
-    new_html = replace_string(old_string)
+    new_html = replace_string(old_string, new_string)
     with open("animals.html", "w") as file:
         file.write(new_html)
     print("Website was successfully generated to the file animals.html.")
 
-# call function an (over)write html
-write_html("__REPLACE_ANIMALS_INFO__")
+
+def main():
+    new_string = ""
+
+    # get animal name
+    animal_name = get_animal_name()
+
+    # get data from api(fetch animal data from api)
+    animals_data = fetch_data_from_api(animal_name)
+
+    #check if list is empty to create
+    if not animals_data:
+        new_string = create_error_message(animal_name)
+    else:
+        animals_data_dict = extract_animal_data(animals_data)
+        new_string = serialize_animal(animals_data_dict)
+
+    #create/overwrite html
+    write_html("__REPLACE_ANIMALS_INFO__", new_string)
+
+
+if __name__ == "__main__":
+    main()
